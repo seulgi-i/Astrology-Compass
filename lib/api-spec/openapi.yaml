@@ -3,13 +3,15 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Saju & Vedic Astrology Analysis API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: astrology
+    description: Astrology analysis operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,59 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /astrology/analyze:
+    post:
+      operationId: analyzeAstrology
+      tags: [astrology]
+      summary: Full astrology analysis
+      description: Returns Saju (Four Pillars) and Vedic astrology analysis
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AstrologyRequest"
+      responses:
+        "200":
+          description: Full analysis result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AstrologyAnalysis"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /astrology/today-fortune:
+    post:
+      operationId: getTodayFortune
+      tags: [astrology]
+      summary: Today's fortune
+      description: Returns today's fortune based on birth info
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AstrologyRequest"
+      responses:
+        "200":
+          description: Today's fortune
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TodayFortune"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +89,376 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+        - message
+
+    AstrologyRequest:
+      type: object
+      properties:
+        birthDate:
+          type: string
+          description: Birth date in YYYY-MM-DD format
+          example: "1990-05-15"
+        birthTime:
+          type: string
+          description: Birth time in HH:MM format (24-hour)
+          example: "14:30"
+        gender:
+          type: string
+          enum: [male, female]
+          description: Gender of the person
+        birthPlace:
+          type: string
+          description: Birth place (city, country)
+          example: "Seoul, South Korea"
+        timezone:
+          type: string
+          description: Timezone offset like +09:00
+          example: "+09:00"
+      required:
+        - birthDate
+        - birthTime
+        - gender
+        - birthPlace
+
+    SajuPillar:
+      type: object
+      properties:
+        heavenlyStem:
+          type: string
+          description: Heavenly stem (천간)
+        earthlyBranch:
+          type: string
+          description: Earthly branch (지지)
+        element:
+          type: string
+          description: Five element (오행)
+        yin_yang:
+          type: string
+          description: Yin or Yang (음양)
+      required:
+        - heavenlyStem
+        - earthlyBranch
+        - element
+        - yin_yang
+
+    SajuChart:
+      type: object
+      properties:
+        yearPillar:
+          $ref: "#/components/schemas/SajuPillar"
+        monthPillar:
+          $ref: "#/components/schemas/SajuPillar"
+        dayPillar:
+          $ref: "#/components/schemas/SajuPillar"
+        hourPillar:
+          $ref: "#/components/schemas/SajuPillar"
+        dominantElement:
+          type: string
+          description: Most dominant five element
+        elementBalance:
+          type: object
+          additionalProperties:
+            type: number
+          description: Balance of five elements (wood, fire, earth, metal, water)
+        dayMaster:
+          type: string
+          description: Day master heavenly stem
+        lunarBirthDate:
+          type: string
+          description: Lunar calendar birth date
+      required:
+        - yearPillar
+        - monthPillar
+        - dayPillar
+        - hourPillar
+        - dominantElement
+        - elementBalance
+        - dayMaster
+        - lunarBirthDate
+
+    VedicPlanet:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Planet name
+        sign:
+          type: string
+          description: Zodiac sign (rashi)
+        house:
+          type: integer
+          description: House position
+        degree:
+          type: number
+          description: Degree in sign
+        isExalted:
+          type: boolean
+        isDebilitated:
+          type: boolean
+        nakshatra:
+          type: string
+          description: Nakshatra (lunar mansion)
+      required:
+        - name
+        - sign
+        - house
+        - degree
+        - isExalted
+        - isDebilitated
+        - nakshatra
+
+    VedicChart:
+      type: object
+      properties:
+        ascendant:
+          type: string
+          description: Rising sign (lagna)
+        moonSign:
+          type: string
+          description: Moon sign (rashi)
+        sunSign:
+          type: string
+          description: Sun sign
+        nakshatra:
+          type: string
+          description: Birth nakshatra
+        dashaSystem:
+          type: object
+          properties:
+            currentDasha:
+              type: string
+            currentBhukti:
+              type: string
+            dashaEndDate:
+              type: string
+          required:
+            - currentDasha
+            - currentBhukti
+            - dashaEndDate
+        planets:
+          type: array
+          items:
+            $ref: "#/components/schemas/VedicPlanet"
+        houseSignifications:
+          type: array
+          items:
+            type: object
+            properties:
+              house:
+                type: integer
+              sign:
+                type: string
+              planets:
+                type: array
+                items:
+                  type: string
+            required:
+              - house
+              - sign
+              - planets
+      required:
+        - ascendant
+        - moonSign
+        - sunSign
+        - nakshatra
+        - dashaSystem
+        - planets
+        - houseSignifications
+
+    DaewoonEntry:
+      type: object
+      properties:
+        period:
+          type: string
+          description: Age range of this daewoon period
+        startAge:
+          type: integer
+        endAge:
+          type: integer
+        heavenlyStem:
+          type: string
+        earthlyBranch:
+          type: string
+        element:
+          type: string
+        theme:
+          type: string
+          description: Life theme for this period
+        keywords:
+          type: array
+          items:
+            type: string
+      required:
+        - period
+        - startAge
+        - endAge
+        - heavenlyStem
+        - earthlyBranch
+        - element
+        - theme
+        - keywords
+
+    Interpretation:
+      type: object
+      properties:
+        strengths:
+          type: array
+          items:
+            type: string
+          description: Key personality strengths
+        weaknesses:
+          type: array
+          items:
+            type: string
+          description: Areas for improvement
+        lifePath:
+          type: string
+          description: Overall life direction and purpose
+        careerGuidance:
+          type: string
+          description: Career and vocation guidance
+        relationshipStyle:
+          type: string
+          description: Relationship and love tendencies
+        healthAdvice:
+          type: string
+          description: Health-related guidance
+        currentPeriodSummary:
+          type: string
+          description: Summary of current life phase
+        daewoonList:
+          type: array
+          items:
+            $ref: "#/components/schemas/DaewoonEntry"
+          description: Major fortune cycles (대운)
+        currentYearFortune:
+          type: string
+          description: Current year fortune (세운)
+        overallScore:
+          type: object
+          properties:
+            wealth:
+              type: integer
+              description: 0-100 score
+            career:
+              type: integer
+            love:
+              type: integer
+            health:
+              type: integer
+            luck:
+              type: integer
+          required:
+            - wealth
+            - career
+            - love
+            - health
+            - luck
+      required:
+        - strengths
+        - weaknesses
+        - lifePath
+        - careerGuidance
+        - relationshipStyle
+        - healthAdvice
+        - currentPeriodSummary
+        - daewoonList
+        - currentYearFortune
+        - overallScore
+
+    AstrologyAnalysis:
+      type: object
+      properties:
+        request:
+          $ref: "#/components/schemas/AstrologyRequest"
+        saju:
+          $ref: "#/components/schemas/SajuChart"
+        vedic:
+          $ref: "#/components/schemas/VedicChart"
+        interpretation:
+          $ref: "#/components/schemas/Interpretation"
+        generatedAt:
+          type: string
+          format: date-time
+      required:
+        - request
+        - saju
+        - vedic
+        - interpretation
+        - generatedAt
+
+    TodayFortune:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        overall:
+          type: string
+          description: Overall fortune summary
+        luckyColor:
+          type: string
+        luckyNumber:
+          type: integer
+        luckyDirection:
+          type: string
+        areas:
+          type: object
+          properties:
+            wealth:
+              type: object
+              properties:
+                score:
+                  type: integer
+                description:
+                  type: string
+              required: [score, description]
+            career:
+              type: object
+              properties:
+                score:
+                  type: integer
+                description:
+                  type: string
+              required: [score, description]
+            love:
+              type: object
+              properties:
+                score:
+                  type: integer
+                description:
+                  type: string
+              required: [score, description]
+            health:
+              type: object
+              properties:
+                score:
+                  type: integer
+                description:
+                  type: string
+              required: [score, description]
+          required: [wealth, career, love, health]
+        advice:
+          type: string
+          description: Key advice for today
+        warningSign:
+          type: string
+          description: Something to be cautious about today
+      required:
+        - date
+        - overall
+        - luckyColor
+        - luckyNumber
+        - luckyDirection
+        - areas
+        - advice
+        - warningSign
