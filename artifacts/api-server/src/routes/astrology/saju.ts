@@ -88,8 +88,9 @@ function getMonthStemBase(yearStemIdx: number): number {
 // Get day pillar based on Julian Day Number
 function getDayPillar(year: number, month: number, day: number) {
   const jd = toJulianDay(year, month, day);
-  // Reference: JD 2451545 (Jan 1, 2000) = 戊辰 (stem=4, branch=4)
-  const refJD = 2451545;
+  // Reference: JD 2451551 (Jan 7, 2000) = 甲子 (갑자, stem=0, branch=0)
+  // Verified: 1994-02-16 = 계유(癸酉), diff=-2151 → stem=9, branch=9 ✓
+  const refJD = 2451551;
   const diff = jd - refJD;
   const stemIdx = ((diff % 10) + 10) % 10;
   const branchIdx = ((diff % 12) + 12) % 12;
