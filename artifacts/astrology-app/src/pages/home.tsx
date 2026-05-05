@@ -47,6 +47,7 @@ export default function Home() {
       { data },
       {
         onSuccess: (result) => {
+          console.log("Astrology analysis result:", result);
           setAnalysis(result);
           setLocation("/result");
         },
